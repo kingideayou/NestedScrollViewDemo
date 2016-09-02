@@ -56,12 +56,19 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
         this.smoothScrollBy(0, 0);
     }
 
+    private void consumeEvent(int dx, int dy, int[] consumed) {
+        this.scrollBy(dx, dy);
+        consumed[0] = 0;
+        consumed[1] = dy;
+        this.consumeEvent = true;
+    }
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         stopScrolling();
         boolean needIntercept = super.onInterceptTouchEvent(ev);
         if (hasNestedScroll) {
-            needIntercept = false;
+            needIntercept = false;//将事件发放给 childView
         }
         return needIntercept;
     }
@@ -98,6 +105,8 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
     @Override
     public void onNestedScroll(View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed) {
         super.onNestedScroll(target, dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed);
+
+        Log.d(TAG, "NestedScroll " + "onNestedScroll");
     }
 
     /**
@@ -112,6 +121,8 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
     @Override
     public void onNestedPreScroll(View target, int dx, int dy, int[] consumed) {
         super.onNestedPreScroll(target, dx, dy, consumed);
+
+        Log.d(TAG, "NestedScroll " + "onNestedPreScroll");
     }
 
     /**
@@ -125,15 +136,25 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
      */
     @Override
     public boolean onNestedFling(View target, float velocityX, float velocityY, boolean consumed) {
+
+        Log.d(TAG, "NestedScroll " + "onNestedFling");
         return super.onNestedFling(target, velocityX, velocityY, consumed);
     }
 
     @Override
     public boolean onNestedPreFling(View target, float velocityX, float velocityY) {
+
+        Log.d(TAG, "NestedScroll " + "onNestedPreFling");
         return super.onNestedPreFling(target, velocityX, velocityY);
     }
 
+    //滑动结束，调用 onStopNestedScroll() 表示本次处理结束
     public void onStopNestedScroll(View target) {
+
+        Log.d(TAG, "onStopNestedScroll onStopNestedScroll onStopNestedScroll");
+
+        hasNestedScroll = false;
+        consumeEvent = false;
         this.mParentHelper.onStopNestedScroll(target);
     }
 
