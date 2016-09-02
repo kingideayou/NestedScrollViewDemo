@@ -4,6 +4,7 @@ import android.content.Context;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.NestedScrollingChild;
 import android.support.v4.view.NestedScrollingChildHelper;
+import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -96,7 +97,6 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        /*
         final int action = MotionEventCompat.getActionMasked(ev);
         switch (action) {
             case MotionEvent.ACTION_DOWN: {
@@ -125,6 +125,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                     mIsBeginDrag = true;
                 }
                 if (mIsBeginDrag && dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset)) {
+                    Log.e(TAG, "dispatchNestedPreScroll run ");
                     mLastMotionY -= mScrollOffset[1];
                     deltaY -= mScrollConsumed[1];
                     ev.offsetLocation(0, mScrollConsumed[1]);
@@ -134,6 +135,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                     }
                     return false;
                 } else {
+                    Log.e(TAG, "dispatchNestedPreScroll dose not run");
                     return super.onInterceptTouchEvent(ev);
                 }
             }
@@ -145,7 +147,6 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                 return super.onInterceptTouchEvent(ev);
             }
         }
-        */
         return super.onInterceptTouchEvent(ev);
     }
 

@@ -7,6 +7,7 @@ import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.ScrollView;
@@ -19,6 +20,9 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
     private static final String TAG = "NestedScrollView";
 
     private static int SENSOR_DISTANCE = 0;
+
+    private boolean hasNestedScroll;
+    private boolean consumeEvent;
 
     private int touchSlop;
     private NestedScrollingParentHelper mParentHelper;
@@ -46,6 +50,22 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
         Log.e(TAG, TAG + " getMeasuredHeight : " + getMeasuredHeight());
     }
 
+
+    private void stopScrolling() {
+        this.smoothScrollBy(0, 0);
+        this.smoothScrollBy(0, 0);
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        stopScrolling();
+        boolean needIntercept = super.onInterceptTouchEvent(ev);
+        if (hasNestedScroll) {
+            needIntercept = false;
+        }
+        return needIntercept;
+    }
+
     /**
      * onStartNestedScroll该方法，一定要按照自己的需求返回true，
      * 该方法决定了当前控件是否能接收到其内部View(非并非是直接子View)滑动时的参数；
@@ -60,7 +80,18 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
         return (nestedScrollAxes & ViewCompat.SCROLL_AXIS_VERTICAL) != 0;
     }
 
+    /**
+     * 从上面的 Child 分析可知，滑动开始的调用 startNestedScroll()，
+     * Parent 收到 onStartNestedScroll() 回调，决定是否需要配合 Child 一起进行处理滑动，
+     * 如果需要配合，还会回调 onNestedScrollAccepted()。
+     * @param child
+     * @param target
+     * @param axes
+     */
     public void onNestedScrollAccepted(View child, View target, int axes) {
+        Log.d(TAG, "onNestedScrollAccepted onNestedScrollAccepted onNestedScrollAccepted");
+        hasNestedScroll = true;
+        consumeEvent = false;
         this.mParentHelper.onNestedScrollAccepted(child, target, axes);
     }
 

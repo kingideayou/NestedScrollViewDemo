@@ -13,7 +13,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        scrollView = (NestedScrollView) findViewById(R.id.scroll_view);
+        scrollView = (NestedScrollView) findViewById(R.id.scroll_view);
         webView = (NestedScrollWebView) findViewById(R.id.web_view);
 
         webView.loadUrl("http://www.jianshu.com/p/4535442d568f");
