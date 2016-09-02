@@ -5,6 +5,8 @@ import android.support.v7.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "MainActivity";
+
     NestedScrollView scrollView;
     NestedScrollWebView webView;
 
@@ -15,8 +17,6 @@ public class MainActivity extends AppCompatActivity {
 
         scrollView = (NestedScrollView) findViewById(R.id.scroll_view);
         webView = (NestedScrollWebView) findViewById(R.id.web_view);
-
         webView.loadUrl("http://www.jianshu.com/p/4535442d568f");
-
     }
 }
