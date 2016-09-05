@@ -108,7 +108,8 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        return super.onInterceptTouchEvent(ev);
+        Log.e(TAG, "onInterceptTouchEvent position : " + position);
+        return position != ScrollStateChangedListener.ScrollState.BOTTOM || super.onInterceptTouchEvent(ev);
     }
 
     private float getMotionEventY(MotionEvent ev, int activePointerId) {
@@ -177,7 +178,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                     setLongClickable(false);
                     setJavaScriptEnable(false);
                 }
-                if (mIsBeingDrag && dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset)) {
+                if (mIsBeingDrag && position == ScrollStateChangedListener.ScrollState.BOTTOM && dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset)) {
                     Log.e(TAG, "dispatchNestedPreScroll run ");
                     mLastMotionY -= mScrollOffset[1];
                     deltaY -= mScrollConsumed[1];
@@ -219,32 +220,6 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
         }
 
         return super.onTouchEvent(event);
-//        if (this.position == ScrollStateChangedListener.ScrollState.MIDDLE) {
-        /*
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN: {
-//                    this.mIsBeingDragged = false;
-                    this.mActivePointerId = MotionEventCompat.getPointerId(event, 0);
-                    this.startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL);
-                    break;
-                }
-                case MotionEvent.ACTION_UP:
-                    break;
-                case MotionEvent.ACTION_CANCEL: {
-                    this.endTouch();
-                    break;
-                }
-            }
-//            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {// 4.x WebView 不能滑动
-//                requestDisallowInterceptTouchEvent(true);
-//            }
-            super.onTouchEvent(event);
-            return true;
-//        }
-          */
-
-//        MotionEvent tempMotionEvent = MotionEvent.obtain(event);
-//        return super.onTouchEvent(event);
     }
 
     private void endTouch() {
@@ -304,7 +279,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
         super.onSizeChanged(w, h, ow, oh);
         this.webviewHeight = h;
         //会调用多次
-        Log.e(TAG, "onSizeChanged: " + h + " contentHeight : " + h);//22686
+        Log.e(TAG, "ContentHeightChanged onSizeChanged: " + h + " contentHeight : " + h);//22686
         if (this.contentHeight < 1) {
             this.setContentHeight(webviewHeight);
         }
@@ -312,11 +287,13 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        Log.e(TAG, TAG + " heightMeasureSpec : " + heightMeasureSpec);
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         Log.e(TAG, TAG + " getMeasuredHeight : " + getMeasuredHeight()); // 1692
+
+        Log.e(TAG, "ContentHeightChanged getMeasuredHeight : " + getMeasuredHeight());//22686
+
         int measureHeight = getMeasuredHeight();
-        if (measureHeight > 0) {
+        if (measureHeight > contentHeight) { //需调整:为了防止多次计算后高度改变导致状态判断出错导致 ScrollView 滑动
             setContentHeight(measureHeight);
         }
     }
