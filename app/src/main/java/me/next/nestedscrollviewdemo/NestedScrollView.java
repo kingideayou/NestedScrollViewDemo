@@ -37,6 +37,7 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
     private boolean isTouchUp;
     private float lastY;
 
+    private int scrollViewMeasureHeight = 0;
 
     private List<View> scrollingChildList;
     private ScrollState mScrollState;
@@ -65,6 +66,7 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         Log.e(TAG, TAG + " heightMeasureSpec : " + heightMeasureSpec);
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        scrollViewMeasureHeight = getMeasuredHeight();
         Log.e(TAG, TAG + " getMeasuredHeight : " + getMeasuredHeight());
     }
 
@@ -88,6 +90,7 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
         if (hasNestedScroll) {
             needIntercept = false;//将事件发放给 childView
         }
+        setTouchState(ev);
         return needIntercept;
     }
 
@@ -235,9 +238,18 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
         Log.d(TAG, "onNestedPreScroll " + "direction : " + direction);
         Log.d(TAG, "onNestedPreScroll " + "mScrollState : " + mScrollState);
 
-
+        //direction = 1 上拉
         if (direction == 1 && mScrollState == ScrollStateChangedListener.ScrollState.BOTTOM) {
             consumeEvent(dx, dy, consumed);
+        }
+        //direction = 2 -> dy < 0
+        if (direction != 1) {
+            Log.d(TAG, "onNestedPreScroll " + "scrollViewMeasureHeight : " + scrollViewMeasureHeight);
+            if (dy < 0) { //下拉
+                if (scrollY != 0) {
+                    consumeEvent(dx, dy, consumed);
+                }
+            }
         }
 
         /*
@@ -292,6 +304,11 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
 //        return super.onNestedFling(target, velocityX, velocityY, consumed);
     }
 
+    /**
+     * https://developer.android.com/reference/android/support/v4/view/NestedScrollingParent.html#onNestedPreFling(android.view.View, float, float)
+     * By returning true from this method,
+     * the parent indicates that the child should not fling its own internal content as well.
+     */
     @Override
     public boolean onNestedPreFling(View target, float velocityX, float velocityY) {
 
@@ -299,7 +316,6 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
 
 
         this.fling(((int) velocityY));
-        return true;
         /*
         boolean v1 = true;
         int scrollY = this.getScrollY();
@@ -314,7 +330,7 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
         }
         return v1;
         */
-//        return super.onNestedPreFling(target, velocityX, velocityY);
+        return super.onNestedPreFling(target, velocityX, velocityY);
     }
 
     //滑动结束，调用 onStopNestedScroll() 表示本次处理结束

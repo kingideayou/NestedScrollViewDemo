@@ -98,7 +98,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
     private float mLastMotionY;
     private final int[] mScrollOffset = new int[2];
     private final int[] mScrollConsumed = new int[2];
-    private boolean mIsBeginDrag = false;
+    private boolean mIsBeingDrag = false;
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
@@ -122,7 +122,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
 
                 Log.e(TAG, "onInterceptTouchEvent ACTION_DOWN");
 
-                mActivePointerId = MotionEventCompat.getPointerId(event, 0);
+                mActivePointerId = MotionEventCompat.getPointerId(event, MotionEvent.ACTION_DOWN);
                 final float initialDownY = getMotionEventY(event, mActivePointerId);
 
                 Log.e(TAG, "onInterceptTouchEvent ACTION_DOWN initialDownY : " + initialDownY);
@@ -133,7 +133,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                 mLastMotionY = initialDownY;
                 startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL);
                 super.onTouchEvent(event);
-                mIsBeginDrag = false;
+                mIsBeingDrag = false;
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
@@ -148,18 +148,25 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                     return false;
                 }
                 int deltaY = (int) (mLastMotionY - y);
+                if (scrollStateChangedListener != null) {
+                    scrollStateChangedListener.onChildDirectionChange(DirectionDetector.getDirection(deltaY, true));
+                }
                 mLastMotionY = y;
                 if (Math.abs(deltaY) >= mTouchSlop) {
-                    mIsBeginDrag = true;
+                    mIsBeingDrag = true;
                 }
-                Log.e(TAG, "mIsBeginDrag : " + mIsBeginDrag);
-                if (mIsBeginDrag) {
+                Log.e(TAG, "mIsBeingDrag : " + mIsBeingDrag);
+                if (mIsBeingDrag) {
                     ViewParent viewParent = this.getParent();
                     if (viewParent != null) {
                         viewParent.requestDisallowInterceptTouchEvent(true);
                     }
                 }
-                if (mIsBeginDrag && dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset)) {
+                if (mIsBeingDrag) {
+                    setLongClickable(false);
+                    setJavaScriptEnable(false);
+                }
+                if (mIsBeingDrag && dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset)) {
                     Log.e(TAG, "dispatchNestedPreScroll run ");
                     mLastMotionY -= mScrollOffset[1];
                     deltaY -= mScrollConsumed[1];
@@ -175,13 +182,15 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                 }
             }
             case MotionEvent.ACTION_CANCEL:
+                endTouch();
+                break;
             case MotionEvent.ACTION_UP: {
 
                 Log.e(TAG, "onInterceptTouchEvent ACTION_UP");
-
+                endTouch();
                 stopNestedScroll();
                 mActivePointerId = INVALID_POINTER;
-                mIsBeginDrag = false;
+                mIsBeingDrag = false;
                 return super.onTouchEvent(event);
             }
         }
@@ -216,8 +225,8 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
     }
 
     private void endTouch() {
-//        setJavaScriptEnable(true);
-//        this.mIsBeingDragged = false;
+        setJavaScriptEnable(true);
+        this.mIsBeingDrag = false;
         this.mActivePointerId = -1;
 //        recycleVelocityTracker();
         stopNestedScroll();
@@ -237,7 +246,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
             isScrollUp = true;
             Log.e(TAG, "onScrollChanged onScrollChanged : webviewHeight == " + this.webviewHeight + "  contentHeight == " + this.contentHeight);
 //            if (y + this.webviewHeight >= this.contentHeight) {
-            if (y + this.webviewHeight >= 23859) {
+            if (y + this.webviewHeight >= 23796) {
                 this.position = ScrollStateChangedListener.ScrollState.BOTTOM;
             } else {
                 this.position = ScrollStateChangedListener.ScrollState.MIDDLE;
@@ -284,6 +293,12 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
 //        Log.e(TAG, "invalidate contentHeight ------------ " + contentHeight);
         if (contentHeight != 0) {
             loadUrl("javascript:window.InjectedObject.getContentHeight(document.getElementsByTagName('html')[0].scrollHeight)");
+        }
+    }
+
+    private void setJavaScriptEnable(boolean enable) {
+        if(this.getSettings().getJavaScriptEnabled() != enable) {
+            this.getSettings().setJavaScriptEnabled(enable);
         }
     }
 
