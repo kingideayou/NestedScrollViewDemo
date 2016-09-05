@@ -5,10 +5,12 @@ import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.NestedScrollingChild;
 import android.support.v4.view.NestedScrollingChildHelper;
 import android.support.v4.view.NestedScrollingParent;
+import android.support.v4.view.VelocityTrackerCompat;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
@@ -38,6 +40,10 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
 
     private boolean isScrollUp = true;//上滑
 
+    private VelocityTracker mVelocityTracker;
+    private int mMaximumVelocity;
+    private int mMinimumVelocity;
+
     private ScrollStateChangedListener scrollStateChangedListener;
 
     public NestedScrollWebView(Context context) {
@@ -56,7 +62,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
     private void init() {
 //        his.mScrollOffset = new int[2];
 //        this.mScrollConsumed = new int[2];
-//        this.mIsBeingDragged = false;
+        this.mIsBeingDrag = false;
         this.contentHeight = -1;
         this.webviewHeight = -1;
 //        this.direction = 0;
@@ -69,10 +75,10 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
 
         mChildHelper = new NestedScrollingChildHelper(this);
         setNestedScrollingEnabled(true);
-        ViewConfiguration v0 = ViewConfiguration.get(this.getContext());
-        int mMinimumVelocity = v0.getScaledMinimumFlingVelocity();
-        int mMaximumVelocity = v0.getScaledMaximumFlingVelocity();
-        int touchSlop = v0.getScaledTouchSlop();
+        ViewConfiguration viewConfiguration = ViewConfiguration.get(this.getContext());
+        mMinimumVelocity = viewConfiguration.getScaledMinimumFlingVelocity();
+        mMaximumVelocity = viewConfiguration.getScaledMaximumFlingVelocity();
+        int touchSlop = viewConfiguration.getScaledTouchSlop();
 //        directionDetector = new j();
         density = this.getResources().getDisplayMetrics().density;
         setOverScrollMode(ViewCompat.OVER_SCROLL_NEVER);
@@ -89,7 +95,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                 ViewGroup.LayoutParams localLayoutParams = NestedScrollWebView.this.getLayoutParams();
                 //1692
                 //732
-                localLayoutParams.height = 1692;
+                localLayoutParams.height = 732;
                 setLayoutParams(localLayoutParams);
             }
         }, 1000);
@@ -115,6 +121,11 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+
+        if (mVelocityTracker == null) {
+            mVelocityTracker = VelocityTracker.obtain();
+        }
+        mVelocityTracker.addMovement(event);
 
         final int action = MotionEventCompat.getActionMasked(event);
         switch (action) {
@@ -185,10 +196,22 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                 endTouch();
                 break;
             case MotionEvent.ACTION_UP: {
+                if (mIsBeingDrag && position == ScrollStateChangedListener.ScrollState.BOTTOM) {
+                    final VelocityTracker velocityTracker = mVelocityTracker;
+                    velocityTracker.computeCurrentVelocity(1000, (float)mMaximumVelocity);
+                    Log.e(TAG, "ACTION_UP" + " mMaximumVelocity : " + mMaximumVelocity);
+
+                    Log.e(TAG, "ACTION_UP === " + velocityTracker.getYVelocity(mActivePointerId));
+
+                    int initialVelocity = (int) VelocityTrackerCompat.getYVelocity(velocityTracker, mActivePointerId);
+                    Log.e(TAG, "ACTION_UP" + " initialVelocity : " + initialVelocity + " === mMinimumVelocity : " + mMinimumVelocity);
+                    if ((Math.abs(initialVelocity) > mMinimumVelocity)) {
+                        flingWithNestedDispatch(-initialVelocity);
+                    }
+                }
 
                 Log.e(TAG, "onInterceptTouchEvent ACTION_UP");
                 endTouch();
-                stopNestedScroll();
                 mActivePointerId = INVALID_POINTER;
                 mIsBeingDrag = false;
                 return super.onTouchEvent(event);
@@ -228,7 +251,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
         setJavaScriptEnable(true);
         this.mIsBeingDrag = false;
         this.mActivePointerId = -1;
-//        recycleVelocityTracker();
+        recycleVelocityTracker();
         stopNestedScroll();
     }
 
@@ -246,7 +269,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
             isScrollUp = true;
             Log.e(TAG, "onScrollChanged onScrollChanged : webviewHeight == " + this.webviewHeight + "  contentHeight == " + this.contentHeight);
 //            if (y + this.webviewHeight >= this.contentHeight) {
-            if (y + this.webviewHeight >= 23796) {
+            if (y + this.webviewHeight >= contentHeight) {//23796
                 this.position = ScrollStateChangedListener.ScrollState.BOTTOM;
             } else {
                 this.position = ScrollStateChangedListener.ScrollState.MIDDLE;
@@ -269,6 +292,14 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
         */
     }
 
+    private void recycleVelocityTracker() {
+        if(this.mVelocityTracker != null) {
+            this.mVelocityTracker.clear();
+            this.mVelocityTracker.recycle();
+            this.mVelocityTracker = null;
+        }
+    }
+
     protected void onSizeChanged(int w, int h, int ow, int oh) {
         super.onSizeChanged(w, h, ow, oh);
         this.webviewHeight = h;
@@ -284,6 +315,10 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
         Log.e(TAG, TAG + " heightMeasureSpec : " + heightMeasureSpec);
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         Log.e(TAG, TAG + " getMeasuredHeight : " + getMeasuredHeight()); // 1692
+        int measureHeight = getMeasuredHeight();
+        if (measureHeight > 0) {
+            setContentHeight(measureHeight);
+        }
     }
 
 
@@ -305,6 +340,12 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
     public void computeScroll() {
         if (this.position == ScrollStateChangedListener.ScrollState.MIDDLE) {
             super.computeScroll();
+        }
+    }
+
+    private void flingWithNestedDispatch(int velocityY) {
+        if(!dispatchNestedPreFling(0f, ((float)velocityY))) {
+            Log.e(TAG, "dispatchNestedPreFling : velocityY : " + velocityY);
         }
     }
 

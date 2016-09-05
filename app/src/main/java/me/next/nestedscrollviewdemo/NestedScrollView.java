@@ -43,6 +43,8 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
     private ScrollState mScrollState;
     private NestedScrollingParentHelper mParentHelper;
 
+    private int childMeasureHeight = 0;
+
     public NestedScrollView(Context paramContext) {
         this(paramContext, null);
     }
@@ -67,6 +69,10 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
         Log.e(TAG, TAG + " heightMeasureSpec : " + heightMeasureSpec);
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         scrollViewMeasureHeight = getMeasuredHeight();
+
+        childMeasureHeight = ((ViewGroup)getChildAt(0)).getChildAt(1).getMeasuredHeight();
+        Log.e(TAG, TAG + " childMeasureHeight : " + childMeasureHeight);
+
         Log.e(TAG, TAG + " getMeasuredHeight : " + getMeasuredHeight());
     }
 
@@ -312,25 +318,21 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
     @Override
     public boolean onNestedPreFling(View target, float velocityX, float velocityY) {
 
-        Log.d(TAG, "NestedScroll " + "onNestedPreFling");
-
-
-        this.fling(((int) velocityY));
-        /*
-        boolean v1 = true;
-        int scrollY = this.getScrollY();
-        if (scrollY < this.currentSwapLine) {
-            this.fling(((int) velocityY));
-            this.consumeEvent = true;
-        } else if (scrollY > this.currentSwapLine) {
-            this.fling(((int) velocityY));
-            this.consumeEvent = true;
+//        this.fling(((int) velocityY));
+//        return super.onNestedPreFling(target, velocityX, velocityY);
+        boolean consumeFling = true;
+        int scrollY = getScrollY();
+        Log.d(TAG, "NestedScroll " + "onNestedPreFling scrollY : " + scrollY);
+        if (scrollY < childMeasureHeight) {
+            fling(((int) velocityY));
+            consumeEvent = true;
+        } else if (scrollY > childMeasureHeight) {
+            fling(((int) velocityY));
+            consumeEvent = true;
         } else {
-            v1 = false;
+            consumeFling = false;
         }
-        return v1;
-        */
-        return super.onNestedPreFling(target, velocityX, velocityY);
+        return consumeFling;
     }
 
     //滑动结束，调用 onStopNestedScroll() 表示本次处理结束
