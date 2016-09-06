@@ -85,13 +85,12 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
 //        settings = this.getSettings();
 //        addJSInterface(new JSGetContentHeight(this, null), "InjectedObject", 99);
 
+        /*
         postDelayed(new Runnable() {
             @Override
             public void run() {
-                        /*
-                        me.next.nestedscrollviewdemo E/NestedScrollWebView: NestedScrollWebView getMeasuredHeight : 12381
-                        me.next.nestedscrollviewdemo E/NestedScrollView: NestedScrollView getMeasuredHeight : 732
-                         */
+//              me.next.nestedscrollviewdemo E/NestedScrollWebView: NestedScrollWebView getMeasuredHeight : 12381
+//              me.next.nestedscrollviewdemo E/NestedScrollView: NestedScrollView getMeasuredHeight : 732
                 ViewGroup.LayoutParams localLayoutParams = NestedScrollWebView.this.getLayoutParams();
                 //1692
                 //732
@@ -99,6 +98,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                 setLayoutParams(localLayoutParams);
             }
         }, 1000);
+        */
     }
 
     private float mLastMotionY;

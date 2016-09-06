@@ -74,6 +74,7 @@ public class NestedScrollView extends ScrollView implements NestedScrollingParen
         Log.e(TAG, TAG + " childMeasureHeight : " + childMeasureHeight);
 
         Log.e(TAG, TAG + " getMeasuredHeight : " + getMeasuredHeight());
+        setNestedScrollViewHeight();
     }
 
 
